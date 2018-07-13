@@ -2,18 +2,18 @@
 
 # Importing libraries - Output folder of videos
 import os
-import numpy
+import numpy as np
 
 # Hyper parameters
 
 
-class HyperParameters:
+class HyperParameters(object):
+
     def __init__(self):
         """ Initialisation of all of the hyper parameters of our algorithm.
             These are parameters which wont be changed during training.
 
             :var self.epoch: The number of training loops
-            :type self.steps: int
 
             :var self.episode_length: The maximum length of an episode
             :type self.episode_length: int
@@ -21,21 +21,16 @@ class HyperParameters:
             :var self.alpha: The learning rate
             :type self.alpha: float
 
-            :var self.nb_directions: The number of perturbations applied on the
-            weigh matrix
-            :type self.nb_directions: int
+            :var self.nb_directions: The number of perturbations applied on the weigh matrix
 
             :var self.k_best_directions: Directions with lowest yields discarded
-            :type self.k_best_directions: int
 
             :var self.noise: Standard deviation sigma in the gaussian distribution
             :type self.noise: float
 
             :var self.seed: For reproducibility
-            :type self.seed: int
 
             :var self.env_name: Name of the environment which we wish to use
-            :type self.env_name: str
         """
 
         self.epoch = 1000
@@ -50,3 +45,43 @@ class HyperParameters:
         self.noise = 0.03
         self.seed = 1
         self.env_name = ''
+
+
+# Online normalisation of states
+
+
+class Normaliser(object):
+
+    def __init__(self, nb_inputs):
+        """
+            :param nb_inputs: Number of inputs of the perceptron
+            :type nb_inputs: int
+
+            :var self.mean: Keeps track of the current mean for each item in the input vector
+            :var self.mean_diff: Numerator to variance
+
+            :var self.counter: Keeps track of how many states we've encountered since the beginning
+        """
+        self.n_states = np.zeros(nb_inputs)
+        self.mean = np.zeros(nb_inputs)
+        self.mean_diff = np.zeros(nb_inputs)
+        self.variance = np.zeros(nb_inputs)
+
+        self.states_sum = 0
+
+    def observe(self, new_state):
+        """
+
+            :param new_state: New state observed by agent
+            :return: None
+        """
+
+        # To increment counter by 1f so that we can calculate the mean
+        self.n_states += 1.0
+
+        self.states_sum += new_state
+        last_mean = self.mean.copy()
+
+        # Online mean computation
+        self.mean += (new_state - self.mean) / self.n_states
+        # self.mean += (self.states_sum / self.n_states) / 2
