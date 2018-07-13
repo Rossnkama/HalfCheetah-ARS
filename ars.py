@@ -12,38 +12,29 @@ class HyperParameters(object):
     def __init__(self):
         """ Initialisation of all of the hyper parameters of our algorithm.
             These are parameters which wont be changed during training.
-
-            :var self.epoch: The number of training loops
-
-            :var self.episode_length: The maximum length of an episode
-            :type self.episode_length: int
-
-            :var self.alpha: The learning rate
-            :type self.alpha: float
-
-            :var self.nb_directions: The number of perturbations applied on the weigh matrix
-
-            :var self.k_best_directions: Directions with lowest yields discarded
-
-            :var self.noise: Standard deviation sigma in the gaussian distribution
-            :type self.noise: float
-
-            :var self.seed: For reproducibility
-
-            :var self.env_name: Name of the environment which we wish to use
         """
 
         self.epoch = 1000
         self.episode_length = 1000
+
+        # Learning rate
         self.alpha = 0.02
+
+        # the number of perturbations applied to the weight matrix
         self.nb_directions = 16
+
+        # Directions with highest yield
         self.k_best_directions = 16
 
         # Making sure that the top directions is lower than the number of directions
         assert self.k_best_directions <= self.nb_directions
 
+        # Standard deviation in gaussian distribution
         self.noise = 0.03
+
+        # For reproducibility
         self.seed = 1
+
         self.env_name = ''
 
 
@@ -56,11 +47,6 @@ class Normaliser(object):
         """
             :param nb_inputs: Number of inputs of the perceptron
             :type nb_inputs: int
-
-            :var self.mean: Keeps track of the current mean for each item in the input vector
-            :var self.mean_diff: Numerator to variance
-
-            :var self.counter: Keeps track of how many states we've encountered since the beginning
         """
         self.n_states = np.zeros(nb_inputs)
         self.mean = np.zeros(nb_inputs)
@@ -70,18 +56,24 @@ class Normaliser(object):
         self.states_sum = 0
 
     def observe(self, new_state):
-        """
+        """ Observes new signals inbound to the perceptron
 
             :param new_state: New state observed by agent
             :return: None
         """
 
         # To increment counter by 1f so that we can calculate the mean
-        self.n_states += 1.0
+        self.n_states += 1.
 
+        # Sum of all states
         self.states_sum += new_state
         last_mean = self.mean.copy()
 
-        # Online mean computation
-        self.mean += (new_state - self.mean) / self.n_states
-        # self.mean += (self.states_sum / self.n_states) / 2
+        # Online mean and variance computation
+        self.mean = (self.mean + (self.states_sum / self.n_states)) / 2
+
+        # Sum of square differences between value and mean
+        self.mean_diff += (new_state - last_mean) * (new_state - self.mean)
+
+        # Variance must never be equal to zero
+        self.variance = (self.mean_diff / new_state).clip(min=1e-2)
