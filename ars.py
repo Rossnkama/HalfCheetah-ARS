@@ -115,7 +115,14 @@ class Policy:
     def evaluate(self, input_vec, delta=None, direction=None):
         """ Evaluates the rewards of different perturbations of the input vectors.
 
-            :param input_vec: Input vector describing states
+            :param input_vec: Matrix to be perturbed (Will be raw state in our case)
             :param delta: Perturbation matrix of small numbers following the normal distribution
+            :param direction: Dictates whether perturbation will be positive or negative
             :return:
         """
+        if direction is None:
+            return self.theta.dot(input_vec)
+        elif direction == "positive":
+            return (self.theta + hp.noise*delta).dot(input_vec)
+        else:
+            return (self.theta - hp.noise*delta).dot(input_vec)
