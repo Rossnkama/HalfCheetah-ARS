@@ -92,3 +92,30 @@ class Normaliser(object):
 
         # Returning normalised states
         return (input_values - observed_mean) / std
+
+
+# The AI (Policy)
+
+
+class Policy:
+
+    def __init__(self, input_size, output_size):
+        """ Architecture of AI Perceptron
+
+            :param input_size: Number of signals describing state of agent:
+                - The angles between the axis of the virtual robot
+                - The muscle's impulses
+            :param output_size: Number of actions agent can play
+        """
+
+        # Matrix of weights between input and output nodes output*inputs
+        # np.zeros takes a tuple coupling hence the double order parenthesise
+        self.theta = np.zeros((output_size, input_size))
+
+    def evaluate(self, input_vec, delta=None, direction=None):
+        """ Evaluates the rewards of different perturbations of the input vectors.
+
+            :param input_vec: Input vector describing states
+            :param delta: Perturbation matrix of small numbers following the normal distribution
+            :return:
+        """
