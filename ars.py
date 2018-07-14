@@ -77,3 +77,18 @@ class Normaliser(object):
 
         # Variance must never be equal to zero
         self.variance = (self.mean_diff / new_state).clip(min=1e-2)
+
+    def normalise(self, input_values):
+        """ Normalises perceptron's input values in accordance to the value's z(standard)-score:
+            - How many standard deviations the value of focus is from the mean
+
+            :param input_values:
+            :return: z-score/standard score
+        """
+        observed_mean = self.mean
+
+        # Standard deviation
+        std = np.sqrt(self.variance)
+
+        # Returning normalised states
+        return (input_values - observed_mean) / std
