@@ -126,3 +126,14 @@ class Policy:
             return (self.theta + hp.noise*delta).dot(input_vec)
         else:
             return (self.theta - hp.noise*delta).dot(input_vec)
+
+    def gen_delta_sample(self):
+        """ Generates a sample of small perturbations following a normal distribution:
+                - A gaussian distribution of mean 0 and variance 1
+
+                :return: Sampled perturbations
+        """
+
+        # randn ==> random normal distribution
+        # *self.theta.shape returns the shape of our matrix of weights
+        return [np.random.randn(*self.theta.shape) for _ in range(hp.nb_directions)]
