@@ -124,8 +124,11 @@ class Policy:
             return self.theta.dot(input_vec)
         elif direction == "positive":
             return (self.theta + hp.noise*delta).dot(input_vec)
-        else:
+        elif direction == "negative":
             return (self.theta - hp.noise*delta).dot(input_vec)
+        else:
+            print("Direction must be positive of negative")
+            exit()
 
     def gen_delta_sample(self):
         """ Generates a sample of small perturbations following a normal distribution:
@@ -214,3 +217,48 @@ def explore(env, normaliser, policy, direction=None, delta=None):
 
     return accumulated_reward
 
+
+# Training the AI
+
+
+def train(env, policy, normaliser, hp):
+    """ Training policy (number of gradient descent steps) through epochs
+
+        :param env: PyBullet environment
+        :param policy: The AI
+        :param normaliser: Normaliser object
+        :param hp: Hyper parameter object full of attributes
+        :return:
+    """
+    for step in range(hp.epoch):
+
+        # Initialising perturbation deltas
+        deltas = policy.gen_delta_sample()
+        r_pos = [0] * hp.nb_directions  # Creates a matrix of r-pos 1 x 16 filled with zeros (nb_directions)
+        r_neg = [0] * hp.nb_directions  # Rewards at negative perturbations
+
+        # Getting r-pos and r-neg
+        for k in range(hp.nb_directions):
+            r_pos[k] = explore(env, normaliser, direction="positive", delta=deltas)
+            r_neg[k] = explore(env, normaliser, direction="negative", delta=deltas)
+
+        # Gathering all r-pos, r-neg to compute std of all these rewards
+        all_rewards = np.array(r_pos + r_neg)  # This concatenates r-pos and r-neg
+        sigma_r = all_rewards.std()
+
+        # Sorting rollouts by max(r-pos, r-neg) and selecting the best k directions
+        scores = {
+            k: max(rewards_pos, rewards_neg)
+            for k, (rewards_pos, rewards_neg) in enumerate(zip(r_pos, r_neg))
+        }
+
+        # Getting best k directions
+        ord_high_to_low = sorted(scores.keys(), key=lambda x: scores[x])[:hp.k_best_directions]
+        rollouts = [(r_pos[k], r_neg[k], deltas[k]) for k in ord_high_to_low]
+
+        # Updating our policy
+        policy.update(rollouts, sigma_r)
+
+        # Printing the final reward of the policy after the update of one episode (1000 actions)
+        reward_evaluation = explore(env, normaliser, policy, direction=None, delta=None)
+        print("Step: {}, Reward: {}").format(step, reward_evaluation)
