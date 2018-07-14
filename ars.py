@@ -135,5 +135,30 @@ class Policy:
         """
 
         # randn ==> random normal distribution
-        # *self.theta.shape returns the shape of our matrix of weights
+        # *self.theta.shape returns the shape of our matrix of weights > (np.theta.shape[0], np.theta.shape[1])
         return [np.random.randn(*self.theta.shape) for _ in range(hp.nb_directions)]
+
+    def update(self, rollouts, sigma_r):
+        """ Updates weights
+
+            :param rollouts: A list of several top k triplets of [reward_positive, reward_negative, the_perturbation]
+                - A session containing the best triplets of rewards obtained by applying some perturbations in the best
+                  directions.
+            :param sigma_r: Standard deviation of the reward
+            :return:
+        """
+
+        # No astrix as it directly excepts the shape
+        step = np.zeros(self.theta.shape)
+
+        # Looping through rollout triplets
+        for r_pos, r_neg, perturbation in rollouts:
+
+            # Finite diff of reward in positive dir and negative dir * pert
+            step += (r_pos - r_neg) * perturbation
+
+        self.theta += hp.alpha / (hp.k_best_directions * sigma_r) * step
+
+
+
+
