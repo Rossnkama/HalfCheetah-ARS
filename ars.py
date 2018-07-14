@@ -62,7 +62,7 @@ class Normaliser(object):
             :return: None
         """
 
-        # To increment counter by 1f so that we can calculate the mean
+        # To increment counter by 1 so that we can calculate the mean
         self.n_states += 1.
 
         # Sum of all states
@@ -118,7 +118,7 @@ class Policy:
             :param input_vec: Matrix to be perturbed (Will be raw state in our case)
             :param delta: Perturbation matrix of small numbers following the normal distribution
             :param direction: Dictates whether perturbation will be positive or negative
-            :return:
+            :return: Perturbed weights
         """
         if direction is None:
             return self.theta.dot(input_vec)
@@ -160,5 +160,57 @@ class Policy:
         self.theta += hp.alpha / (hp.k_best_directions * sigma_r) * step
 
 
+# Exploring the policy on one specific direction, over one episode
 
+
+def explore(env, normaliser, policy, direction=None, delta=None):
+    """ Gives us a relevant measure of the reward over one full episode for one specific direction of perturbation.
+
+        :param env: PyBullet environment
+        :param normaliser: Normaliser object
+        :param policy: The AI
+        :param direction: Direction of the perturbation
+        :param delta: The perturbation matrix
+        :return: Sum of all rewards of the episode played
+    """
+
+    # Returns first state
+    state = env.reset()
+
+    # Are we at end of episode?
+    # This is true if:
+    #   - Agent has fallen
+    #   - Agent has walked for some time >= episode length (Max no of actions which can be played per episode)
+    done = False
+
+    num_actions_played = 0.  # Will be used in float computation
+    accumulated_reward = 0
+
+    while not done and num_actions_played < hp.episode_length:
+
+        # Observing state give the object a mean and std for the state
+        normaliser.observe(state)
+
+        # Normalising state with the values observed earlier
+        normaliser.normalise(state)
+
+        # Feeding state to perceptron
+        action = policy.evaluate(state, delta, direction)
+        state, reward, done, _ = env.step(action)
+
+        ''' We won't want our policy to be biased by really high positive rewards and really low negative rewards.
+            
+            In an episode, most of the rewards we can can be really low values (-1 to +1) but in the same episode 
+            1 one 2 rewards could be taking some very high values. 
+            
+            This would cause a bias in the final accumulated reward  / average reward, disturbing the measure of the 
+            reward. So we want to ignore these extreme outliars, setting super high rewards to +1 or negative rewards
+            to negative rewards: 
+        '''
+
+        reward = max(min(reward, 1), -1)  # Constrains edge cases to bounds of -1 to 1
+        accumulated_reward += reward
+        num_actions_played += 1
+
+    return accumulated_reward
 
