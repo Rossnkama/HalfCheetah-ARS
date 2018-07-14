@@ -44,7 +44,7 @@ class HyperParameters(object):
 # Online normalisation of states
 
 
-class Normaliser(object):
+class Normaliser:
 
     def __init__(self, nb_inputs):
         """
@@ -55,7 +55,6 @@ class Normaliser(object):
         self.mean = np.zeros(nb_inputs)
         self.mean_diff = np.zeros(nb_inputs)
         self.variance = np.zeros(nb_inputs)
-
         self.states_sum = 0
 
     def observe(self, new_state):
@@ -91,10 +90,10 @@ class Normaliser(object):
         observed_mean = self.mean
 
         # Standard deviation
-        std = np.sqrt(self.variance)
+        observed_std = np.sqrt(self.variance)
 
         # Returning normalised states
-        return (input_values - observed_mean) / std
+        return (input_values - observed_mean) / observed_std
 
 
 # The AI (Policy)
@@ -127,11 +126,8 @@ class Policy:
             return self.theta.dot(input_vec)
         elif direction == "positive":
             return (self.theta + hp.noise*delta).dot(input_vec)
-        elif direction == "negative":
-            return (self.theta - hp.noise*delta).dot(input_vec)
         else:
-            print("Direction must be positive of negative")
-            exit()
+            return (self.theta - hp.noise*delta).dot(input_vec)
 
     def gen_delta_sample(self):
         """ Generates a sample of small perturbations following a normal distribution:
@@ -198,7 +194,7 @@ def explore(env, normaliser, policy, direction=None, delta=None):
         normaliser.observe(state)
 
         # Normalising state with the values observed earlier
-        normaliser.normalise(state)
+        state = normaliser.normalise(state)
 
         # Feeding state to perceptron
         action = policy.evaluate(state, delta, direction)
