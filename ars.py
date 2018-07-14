@@ -242,8 +242,8 @@ def train(env, policy, normaliser, hp):
 
         # Getting r-pos and r-neg
         for k in range(hp.nb_directions):
-            r_pos[k] = explore(env, normaliser, direction="positive", delta=deltas)
-            r_neg[k] = explore(env, normaliser, direction="negative", delta=deltas)
+            r_pos[k] = explore(env, normaliser, policy, direction="positive", delta=deltas[k])
+            r_neg[k] = explore(env, normaliser, policy, direction="negative", delta=deltas[k])
 
         # Gathering all r-pos, r-neg to compute std of all these rewards
         all_rewards = np.array(r_pos + r_neg)  # This concatenates r-pos and r-neg
