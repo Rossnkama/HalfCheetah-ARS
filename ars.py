@@ -3,6 +3,9 @@
 # Importing libraries - Output folder of videos
 import os
 import numpy as np
+import gym
+from gym import wrappers
+import pybullet_envs
 
 # Hyper parameters
 
@@ -35,7 +38,7 @@ class HyperParameters(object):
         # For reproducibility
         self.seed = 1
 
-        self.env_name = ''
+        self.env_name = 'HalfCheetahBulletEnv-v0'
 
 
 # Online normalisation of states
@@ -262,3 +265,32 @@ def train(env, policy, normaliser, hp):
         # Printing the final reward of the policy after the update of one episode (1000 actions)
         reward_evaluation = explore(env, normaliser, policy, direction=None, delta=None)
         print("Step: {}, Reward: {}").format(step, reward_evaluation)
+
+
+# Running the main code
+
+def mkdir(base, name):
+    path = os.path.join(base, name)
+    if not os.path.exists(path):
+        os.makedirs(path)
+    return path
+
+
+work_dir = mkdir('exp', 'brs')
+monitor_dir = mkdir(work_dir, 'monitor')
+
+# Obj of hyperparamers class
+hp = HyperParameters()
+# Seed for reproducibility
+np.random.seed(hp.seed)
+# Making the environment
+env = gym.make(hp.env_name)
+# Saving video's + metadata to chosen directory
+env = wrappers.Monitor(env, monitor_dir, force=True)
+
+# Creating perceptron being the perceptron taking in states and with the policy returning an action to make
+input_size = env.observation_space.shape[0]  # Number of inputs is located at [0]
+output_size = env.action_space.shape[0]
+policy = Policy(input_size, output_size)
+normaliser = Normaliser(input_size)
+train(env, policy, normaliser, hp)
