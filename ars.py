@@ -79,7 +79,7 @@ class Normaliser(object):
         self.mean_diff += (new_state - last_mean) * (new_state - self.mean)
 
         # Variance must never be equal to zero
-        self.variance = (self.mean_diff / new_state).clip(min=1e-2)
+        self.variance = (self.mean_diff / self.n_states).clip(min=1e-2)
 
     def normalise(self, input_values):
         """ Normalises perceptron's input values in accordance to the value's z(standard)-score:
